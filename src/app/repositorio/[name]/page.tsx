@@ -2,8 +2,15 @@
 
 import { useGithubRepos } from "@/hooks/useGithubRepos";
 import Pagination from "@/components/Pagination";
+import { useRouter } from "next/navigation";
 
 export default function Repositorio({ params }: { params: { name: string } }) {
+  const router = useRouter();
+
+  const handleSearch = () => {
+    router.push(`/`);
+  };
+
   const {
     repos,
     loading,
@@ -19,9 +26,18 @@ export default function Repositorio({ params }: { params: { name: string } }) {
 
   return (
     <main className="bg-black/90 min-h-screen p-12 text-white">
-      <h1 className="text-2xl font-bold mb-6">
-        Repositórios de <span className="text-indigo-400">{params.name}</span>
-      </h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold mb-6">
+          Repositórios de <span className="text-indigo-400">{params.name}</span>
+        </h1>
+
+        <button 
+          onClick={handleSearch}
+          className="bg-zinc-700 hover:bg-zinc-800 text-white font-bold rounded p-2 transition"
+        >
+            Voltar
+        </button>
+      </div>
 
       {loading && <p>🔄 Carregando...</p>}
       {error && <p className="text-red-500">❌ {error}</p>}
