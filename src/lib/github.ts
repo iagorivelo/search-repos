@@ -1,49 +1,36 @@
-export type Repo = {
-  id: number;
-  name: string;
-  html_url: string;
-  description: string | null;
+import type { GithubUser, Repo } from "@/types/github";
+
+const GITHUB_API_BASE = "https://api.github.com";
+
+const DEFAULT_HEADERS = {
+  Accept: "application/vnd.github.v3+json",
 };
 
-export async function fetchUserRepos(
-  username: string,
-  page: number = 1,
-  perPage: number = 10
-): Promise<Repo[]> {
-  const res = await fetch(
-    `https://api.github.com/users/${username}/repos?page=${page}&per_page=${perPage}`,
-    {
-      headers: {
-        "Accept": "application/vnd.github.v3+json",
-      },
-      cache: "no-store",
-    }
-  );
+async function githubFetch<T>(endpoint: string): Promise<T> {
+  const res = await fetch(`${GITHUB_API_BASE}${endpoint}`, {
+    headers: DEFAULT_HEADERS,
+    next: { revalidate: 60 },
+  });
 
   if (!res.ok) {
-    throw new Error("Erro ao buscar repositórios");
+    if (res.status === 404) throw new Error("Usuário não encontrado");
+    if (res.status === 403) throw new Error("Limite de requisições da API atingido");
+    throw new Error("Erro ao buscar dados do GitHub");
   }
 
   return res.json();
 }
 
-export type User = {
-  login: string;
-  public_repos: number;
-};
+export async function fetchUserRepos(
+  username: string,
+  page = 1,
+  perPage = 10
+): Promise<Repo[]> {
+  return githubFetch<Repo[]>(
+    `/users/${username}/repos?page=${page}&per_page=${perPage}&sort=updated`
+  );
+}
 
-export async function fetchUserTotalRepos(username: string): Promise<number> {
-  const res = await fetch(`https://api.github.com/users/${username}`, {
-    headers: {
-      "Accept": "application/vnd.github.v3+json",
-    },
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error("Usuário não encontrado");
-  }
-
-  const data: User = await res.json();
-  return data.public_repos;
+export async function fetchUser(username: string): Promise<GithubUser> {
+  return githubFetch<GithubUser>(`/users/${username}`);
 }
