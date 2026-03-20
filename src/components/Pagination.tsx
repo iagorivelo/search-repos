@@ -1,6 +1,8 @@
 "use client";
 
-import React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 
 type PaginationProps = {
   page: number;
@@ -21,63 +23,64 @@ export default function Pagination({
   onNext,
   onPageChange,
 }: PaginationProps) {
-  const totalPages = totalCount ? Math.ceil(totalCount / perPage) : page + (hasMore ? 1 : 0);
+  const totalPages = totalCount
+    ? Math.ceil(totalCount / perPage)
+    : page + (hasMore ? 1 : 0);
 
-  const getPages = () => {
-    const pages: (number | string)[] = [];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      if (page <= 3) {
-        pages.push(1, 2, 3, "...", totalPages);
-      } else if (page >= totalPages - 2) {
-        pages.push(1, "...", totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        pages.push(1, "...", page - 1, page, page + 1, "...", totalPages);
-      }
+  const getPages = (): (number | "...")[] => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
 
-    return pages;
+    if (page <= 3) return [1, 2, 3, "...", totalPages];
+    if (page >= totalPages - 2)
+      return [1, "...", totalPages - 2, totalPages - 1, totalPages];
+
+    return [1, "...", page - 1, page, page + 1, "...", totalPages];
   };
 
   return (
-    <div className="flex justify-center gap-2 mt-8 items-center">
+    <div className="flex justify-center gap-1 mt-4 items-center">
       <button
         disabled={page === 1}
         onClick={onPrev}
-        className="px-3 py-1 bg-indigo-600 rounded disabled:opacity-50"
+        aria-label="Página anterior"
+        className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
       >
-        ⬅️
+        <ChevronLeft className="w-4 h-4" />
       </button>
 
       {getPages().map((p, idx) =>
-        typeof p === "number" ? (
+        p === "..." ? (
+          <span
+            key={`ellipsis-${idx}`}
+            className="w-8 text-center text-sm text-zinc-400"
+          >
+            …
+          </span>
+        ) : (
           <button
-            key={idx}
-            onClick={() => onPageChange(p)}
-            className={`px-3 py-1 rounded ${
+            key={p}
+            onClick={() => onPageChange(p as number)}
+            className={cn(
+              "w-8 h-8 text-sm rounded-lg transition",
               p === page
-                ? "bg-indigo-400 text-black font-bold"
-                : "bg-indigo-700 hover:bg-indigo-500"
-            }`}
+                ? "bg-zinc-900 text-white font-medium"
+                : "text-zinc-600 hover:bg-zinc-100"
+            )}
           >
             {p}
           </button>
-        ) : (
-          <span key={idx} className="px-2 text-gray-400">
-            {p}
-          </span>
         )
       )}
 
       <button
         disabled={page >= totalPages}
         onClick={onNext}
-        className="px-3 py-1 bg-indigo-600 rounded disabled:opacity-50"
+        aria-label="Próxima página"
+        className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
       >
-        ➡️
+        <ChevronRight className="w-4 h-4" />
       </button>
     </div>
   );
