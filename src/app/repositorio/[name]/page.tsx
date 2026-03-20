@@ -1,81 +1,95 @@
 "use client";
 
-import { useGithubRepos } from "@/hooks/useGithubRepos";
-import Pagination from "@/components/Pagination";
 import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
-export default function Repositorio({ params }: { params: { name: string } }) {
+import { useGithubRepos } from "@/hooks/useGithubRepos";
+import { RepoCard } from "@/components/RepoCard";
+import { UserProfile } from "@/components/UserProfile";
+import { RepoSkeleton, UserProfileSkeleton } from "@/components/ui/skeleton";
+import Pagination from "@/components/Pagination";
+
+interface RepositorioPageProps {
+  params: { name: string };
+}
+
+export default function RepositorioPage({ params }: RepositorioPageProps) {
   const router = useRouter();
-
-  const handleSearch = () => {
-    router.push(`/`);
-  };
 
   const {
     repos,
+    user,
     loading,
     error,
     page,
+    perPage,
     totalCount,
+    hasMore,
     nextPage,
     prevPage,
-    perPage,
-    hasMore,
     setPage,
-  } = useGithubRepos(params.name as string, 10);
+  } = useGithubRepos(params.name, 10);
 
   return (
-    <main className="bg-black/90 min-h-screen p-12 text-white">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold mb-6">
-          Repositórios de <span className="text-indigo-400">{params.name}</span>
-        </h1>
-
-        <button 
-          onClick={handleSearch}
-          className="bg-zinc-700 hover:bg-zinc-800 text-white font-bold rounded p-2 transition"
+    <main className="min-h-screen bg-zinc-50">
+      <div className="max-w-2xl mx-auto px-4 py-10 space-y-5">
+        <button
+          onClick={() => router.push("/")}
+          className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition"
         >
-            Voltar
+          <ArrowLeft className="w-4 h-4" />
+          Voltar
         </button>
+
+        {user ? <UserProfile user={user} /> : loading && <UserProfileSkeleton />}
+
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-zinc-500">
+            {totalCount != null
+              ? `${totalCount.toLocaleString("pt-BR")} repositórios`
+              : "Repositórios"}
+          </p>
+
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <ul className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <RepoSkeleton key={i} />
+              ))}
+            </ul>
+          ) : (
+            <>
+              {!error && repos.length === 0 && (
+                <p className="text-sm text-zinc-400 text-center py-16">
+                  Nenhum repositório encontrado.
+                </p>
+              )}
+              <ul className="space-y-3">
+                {repos.map((repo) => (
+                  <RepoCard key={repo.id} repo={repo} />
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+
+        {!loading && !error && repos.length > 0 && (
+          <Pagination
+            page={page}
+            perPage={perPage}
+            totalCount={totalCount ?? undefined}
+            hasMore={hasMore}
+            onPrev={prevPage}
+            onNext={nextPage}
+            onPageChange={setPage}
+          />
+        )}
       </div>
-
-      {loading && <p>🔄 Carregando...</p>}
-      {error && <p className="text-red-500">❌ {error}</p>}
-
-      {!loading && !error && repos.length === 0 && (
-        <p>Nenhum repositório encontrado.</p>
-      )}
-
-      <ul className="grid gap-4 mt-6">
-        {repos.map((repo) => (
-          <li
-            key={repo.id}
-            className="bg-indigo-700/30 border border-indigo-600 rounded-md p-2 hover:bg-indigo-600/40 transition"
-          >
-            <a
-              href={repo.html_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-lg font-semibold text-indigo-300 hover:underline"
-            >
-              {repo.name}
-            </a>
-            {repo.description && (
-              <p className="text-gray-300 mt-2">{repo.description}</p>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      <Pagination
-        page={page}
-        perPage={perPage}
-        totalCount={totalCount ?? undefined}
-        hasMore={hasMore}
-        onPrev={prevPage}
-        onNext={nextPage}
-        onPageChange={setPage}
-      />
     </main>
   );
 }
