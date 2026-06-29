@@ -119,8 +119,8 @@ Pronto. Como o fetch roda no servidor, o [`src/lib/github.ts`](src/lib/github.ts
 **Por que buscar no servidor (Server Components)?**
 A listagem (`/repositorio/[name]`) é um Server Component assíncrono que busca perfil e repositórios em paralelo (`Promise.all`). Isso deixa o token seguro (nunca chega ao browser), faz o cache do `fetch` valer de verdade, melhora o first paint e o SEO.
 
-**Por que `next: { revalidate: 60 }` no fetch?**
-Os dados ficam em cache por 60 segundos no servidor. Suficiente pra não bater na API a cada clique de paginação. (Esse cache só funciona porque o fetch é server-side — no browser ele seria ignorado.)
+**Por que cache de 1 hora no fetch (`revalidate`)?**
+A 1ª requisição de um usuário/página bate na API do GitHub; as próximas (de qualquer visitante) são servidas do Data Cache do Next por até 1 hora, sem nova chamada — cada URL é cacheada à parte. Reduz bastante o consumo da API e o risco de estourar o limite. O custo é staleness: uma mudança no GitHub pode levar até 1h pra refletir aqui, o que é aceitável pra um visualizador de repos públicos. (Esse cache só funciona porque o fetch é server-side — no browser ele seria ignorado.)
 
 **Por que paginação por URL (`?page=N`)?**
 O estado da página vive na URL, então cada página é linkável/compartilhável, funciona com voltar/avançar do navegador e até sem JS. A troca de página remonta o `<Suspense>` (via `key`), reexibindo o skeleton.

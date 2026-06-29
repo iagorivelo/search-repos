@@ -2,6 +2,12 @@ import type { GithubUser, Repo } from "@/types/github";
 
 const GITHUB_API_BASE = "https://api.github.com";
 
+// Cache de dados do Next (server-side, compartilhado entre todos os visitantes):
+// a 1ª requisição busca na API do GitHub e guarda o resultado; as próximas, dentro
+// da janela abaixo, vêm do cache sem bater na API. Cada URL (usuário + página) é
+// cacheada separadamente.
+const REVALIDATE_SECONDS = 60 * 60; // 1 hora
+
 // Roda no servidor (Server Components), então o token nunca chega ao browser.
 // Sem token: 60 req/h. Com token: 5.000 req/h.
 function buildHeaders(): HeadersInit {
@@ -19,7 +25,7 @@ function buildHeaders(): HeadersInit {
 async function githubFetch<T>(endpoint: string): Promise<T> {
   const res = await fetch(`${GITHUB_API_BASE}${endpoint}`, {
     headers: buildHeaders(),
-    next: { revalidate: 60 },
+    next: { revalidate: REVALIDATE_SECONDS },
   });
 
   if (!res.ok) {
