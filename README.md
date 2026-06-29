@@ -6,7 +6,9 @@ Uma aplicação web para procurar os repositórios públicos de qualquer usuári
 
 ## ✨ O que ela faz
 
-Você digita um nome de usuário do GitHub, aperta Enter e pronto: vê todos os repositórios públicos daquela pessoa, com linguagem, estrelas, forks e quando foi atualizado pela última vez. Tem paginação, perfil do usuário e skeleton de loading enquanto os dados chegam.
+Você digita um nome de usuário do GitHub, aperta Enter e pronto: vê todos os repositórios públicos daquela pessoa, com linguagem, estrelas, forks e quando foi atualizado pela última vez. Tem paginação (via URL, `?page=N`), perfil do usuário, skeleton de loading enquanto os dados chegam e tema claro/escuro.
+
+Os dados são buscados no **servidor** (Server Components), então a página já chega renderizada e o token da API nunca vai parar no browser.
 
 ---
 
@@ -34,12 +36,10 @@ src/
 ├── components/
 │   ├── ui/
 │   │   └── skeleton.tsx             # skeletons de loading
-│   ├── Pagination.tsx               # paginação com ellipsis
+│   ├── Pagination.tsx               # paginação com ellipsis (links ?page=N)
 │   ├── RepoCard.tsx                 # card de repositório
+│   ├── ThemeToggle.tsx              # botão de tema claro/escuro
 │   └── UserProfile.tsx              # card de perfil do usuário
-│
-├── hooks/
-│   └── useGithubRepos.ts            # lógica de busca + paginação
 │
 ├── lib/
 │   ├── github.ts                    # wrapper da GitHub API
@@ -80,29 +80,18 @@ Acesse [http://localhost:3000](http://localhost:3000) e pronto.
 
 ## 🔑 Variável de ambiente (opcional, mas recomendado)
 
-A GitHub API tem um limite de **60 requisições por hora** para chamadas sem autenticação. Se você for testar bastante, vale criar um token e configurar:
+A GitHub API tem um limite de **60 requisições por hora** para chamadas sem autenticação. Se você for testar bastante, vale criar um token:
 
-**1. Crie um arquivo `.env.local` na raiz do projeto:**
+**1. Gere um token em:** [github.com/settings/tokens](https://github.com/settings/tokens)
+> Não precisa de nenhum escopo — um token básico já resolve.
+
+**2. Crie um arquivo `.env.local` na raiz do projeto:**
 
 ```env
 GITHUB_TOKEN=seu_token_aqui
 ```
 
-**2. Gere um token em:** [github.com/settings/tokens](https://github.com/settings/tokens)
-> Não precisa de nenhum escopo — um token básico já resolve.
-
-**3. Use o token no `src/lib/github.ts`:**
-
-```ts
-const DEFAULT_HEADERS = {
-  Accept: "application/vnd.github.v3+json",
-  ...(process.env.GITHUB_TOKEN && {
-    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-  }),
-};
-```
-
-Com isso, o limite sobe para **5.000 requisições por hora**.
+Pronto. Como o fetch roda no servidor, o [`src/lib/github.ts`](src/lib/github.ts) lê essa variável **automaticamente** e adiciona o header `Authorization` — sem editar código e sem expor o token no browser. Com isso, o limite sobe para **5.000 requisições por hora**.
 
 ---
 
@@ -127,14 +116,20 @@ Com isso, o limite sobe para **5.000 requisições por hora**.
 
 ## 🧠 Decisões técnicas
 
+**Por que buscar no servidor (Server Components)?**
+A listagem (`/repositorio/[name]`) é um Server Component assíncrono que busca perfil e repositórios em paralelo (`Promise.all`). Isso deixa o token seguro (nunca chega ao browser), faz o cache do `fetch` valer de verdade, melhora o first paint e o SEO.
+
 **Por que `next: { revalidate: 60 }` no fetch?**
-Em vez de `cache: "no-store"` em tudo (que não aproveita nada), os dados ficam em cache por 60 segundos. Suficiente pra não bater na API a cada clique de paginação.
+Os dados ficam em cache por 60 segundos no servidor. Suficiente pra não bater na API a cada clique de paginação. (Esse cache só funciona porque o fetch é server-side — no browser ele seria ignorado.)
 
-**Por que cleanup no `useEffect`?**
-Se o usuário digitar um nome e trocar antes da resposta chegar, a requisição antiga não vai sobrescrever o estado novo. Evita race conditions.
+**Por que paginação por URL (`?page=N`)?**
+O estado da página vive na URL, então cada página é linkável/compartilhável, funciona com voltar/avançar do navegador e até sem JS. A troca de página remonta o `<Suspense>` (via `key`), reexibindo o skeleton.
 
-**Por que `useCallback` nos `nextPage` / `prevPage`?**
-As funções não são recriadas a cada render, o que deixa a referência estável caso você passe elas como props adiante.
+**Por que `encodeURIComponent` no username?**
+Pra um nome com caracteres especiais não quebrar (ou manipular) a URL da API do GitHub.
+
+**Por que dark mode com tokens semânticos?**
+Os componentes usam `bg-background`, `text-foreground`, `bg-card` etc. (variáveis em [`globals.css`](src/app/globals.css)) em vez de cores fixas. Um único `.dark` no `<html>` troca o tema inteiro, sem `dark:` espalhado pelo código. Um script inline no layout aplica o tema antes da primeira pintura pra evitar flash.
 
 ---
 
