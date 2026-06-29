@@ -34,26 +34,26 @@ export function RepoCard({ repo }: RepoCardProps) {
     : null;
 
   return (
-    <li className="group bg-white border border-zinc-200 rounded-xl p-4 hover:border-zinc-300 hover:shadow-sm transition-all duration-200">
+    <li className="group bg-card border border-border rounded-xl p-4 hover:border-foreground/20 hover:shadow-sm transition-all duration-200">
       <div className="flex items-start justify-between gap-3">
         <a
           href={repo.html_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-medium text-zinc-900 hover:text-zinc-500 transition-colors text-sm truncate"
+          className="font-medium text-foreground hover:text-muted-foreground transition-colors text-sm truncate"
         >
           {repo.name}
         </a>
-        <ExternalLink className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-400 transition-colors shrink-0 mt-0.5" />
+        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors shrink-0 mt-0.5" />
       </div>
 
       {repo.description && (
-        <p className="text-sm text-zinc-500 mt-1.5 line-clamp-2 leading-relaxed">
+        <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
           {repo.description}
         </p>
       )}
 
-      <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-zinc-400">
+      <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-muted-foreground">
         {langColor && (
           <span className="flex items-center gap-1.5">
             <span
