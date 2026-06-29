@@ -2,13 +2,23 @@ import type { GithubUser, Repo } from "@/types/github";
 
 const GITHUB_API_BASE = "https://api.github.com";
 
-const DEFAULT_HEADERS = {
-  Accept: "application/vnd.github.v3+json",
-};
+// Roda no servidor (Server Components), então o token nunca chega ao browser.
+// Sem token: 60 req/h. Com token: 5.000 req/h.
+function buildHeaders(): HeadersInit {
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+  };
+
+  if (process.env.GITHUB_TOKEN) {
+    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  }
+
+  return headers;
+}
 
 async function githubFetch<T>(endpoint: string): Promise<T> {
   const res = await fetch(`${GITHUB_API_BASE}${endpoint}`, {
-    headers: DEFAULT_HEADERS,
+    headers: buildHeaders(),
     next: { revalidate: 60 },
   });
 
@@ -26,11 +36,12 @@ export async function fetchUserRepos(
   page = 1,
   perPage = 10
 ): Promise<Repo[]> {
+  const user = encodeURIComponent(username);
   return githubFetch<Repo[]>(
-    `/users/${username}/repos?page=${page}&per_page=${perPage}&sort=updated`
+    `/users/${user}/repos?page=${page}&per_page=${perPage}&sort=updated`
   );
 }
 
 export async function fetchUser(username: string): Promise<GithubUser> {
-  return githubFetch<GithubUser>(`/users/${username}`);
+  return githubFetch<GithubUser>(`/users/${encodeURIComponent(username)}`);
 }

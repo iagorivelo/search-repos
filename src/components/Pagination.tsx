@@ -1,87 +1,98 @@
-"use client";
-
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 type PaginationProps = {
   page: number;
-  perPage: number;
-  totalCount?: number;
-  hasMore: boolean;
-  onPrev: () => void;
-  onNext: () => void;
-  onPageChange: (page: number) => void;
+  totalPages: number;
+  basePath: string;
 };
 
-export default function Pagination({
-  page,
-  perPage,
-  totalCount,
-  hasMore,
-  onPrev,
-  onNext,
-  onPageChange,
-}: PaginationProps) {
-  const totalPages = totalCount
-    ? Math.ceil(totalCount / perPage)
-    : page + (hasMore ? 1 : 0);
+function hrefFor(basePath: string, page: number) {
+  return page <= 1 ? basePath : `${basePath}?page=${page}`;
+}
 
-  const getPages = (): (number | "...")[] => {
-    if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
+function getPages(page: number, totalPages: number): (number | "...")[] {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
 
-    if (page <= 3) return [1, 2, 3, "...", totalPages];
-    if (page >= totalPages - 2)
-      return [1, "...", totalPages - 2, totalPages - 1, totalPages];
+  if (page <= 3) return [1, 2, 3, "...", totalPages];
+  if (page >= totalPages - 2)
+    return [1, "...", totalPages - 2, totalPages - 1, totalPages];
 
-    return [1, "...", page - 1, page, page + 1, "...", totalPages];
-  };
+  return [1, "...", page - 1, page, page + 1, "...", totalPages];
+}
+
+const arrowBase = "p-2 rounded-lg transition";
+
+export default function Pagination({ page, totalPages, basePath }: PaginationProps) {
+  const prevDisabled = page <= 1;
+  const nextDisabled = page >= totalPages;
 
   return (
     <div className="flex justify-center gap-1 mt-4 items-center">
-      <button
-        disabled={page === 1}
-        onClick={onPrev}
-        aria-label="Página anterior"
-        className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </button>
+      {prevDisabled ? (
+        <span
+          aria-disabled="true"
+          className={cn(arrowBase, "text-muted-foreground opacity-30 cursor-not-allowed")}
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </span>
+      ) : (
+        <Link
+          href={hrefFor(basePath, page - 1)}
+          aria-label="Página anterior"
+          className={cn(arrowBase, "text-muted-foreground hover:bg-muted")}
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Link>
+      )}
 
-      {getPages().map((p, idx) =>
+      {getPages(page, totalPages).map((p, idx) =>
         p === "..." ? (
           <span
             key={`ellipsis-${idx}`}
-            className="w-8 text-center text-sm text-zinc-400"
+            className="w-8 text-center text-sm text-muted-foreground"
           >
             …
           </span>
-        ) : (
-          <button
+        ) : p === page ? (
+          <span
             key={p}
-            onClick={() => onPageChange(p as number)}
-            className={cn(
-              "w-8 h-8 text-sm rounded-lg transition",
-              p === page
-                ? "bg-zinc-900 text-white font-medium"
-                : "text-zinc-600 hover:bg-zinc-100"
-            )}
+            aria-current="page"
+            className="w-8 h-8 inline-flex items-center justify-center text-sm rounded-lg bg-primary text-primary-foreground font-medium"
           >
             {p}
-          </button>
+          </span>
+        ) : (
+          <Link
+            key={p}
+            href={hrefFor(basePath, p)}
+            className="w-8 h-8 inline-flex items-center justify-center text-sm rounded-lg text-muted-foreground hover:bg-muted transition"
+          >
+            {p}
+          </Link>
         )
       )}
 
-      <button
-        disabled={page >= totalPages}
-        onClick={onNext}
-        aria-label="Próxima página"
-        className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
+      {nextDisabled ? (
+        <span
+          aria-disabled="true"
+          className={cn(arrowBase, "text-muted-foreground opacity-30 cursor-not-allowed")}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </span>
+      ) : (
+        <Link
+          href={hrefFor(basePath, page + 1)}
+          aria-label="Próxima página"
+          className={cn(arrowBase, "text-muted-foreground hover:bg-muted")}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Link>
+      )}
     </div>
   );
 }
