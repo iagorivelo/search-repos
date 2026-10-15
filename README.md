@@ -2,6 +2,8 @@
 
 Uma aplicação web para procurar os repositórios públicos de qualquer usuário do GitHub de forma rápida, limpa e sem frescura.
 
+**Veja no portfólio:** [iagorivelo.vercel.app/projects/search-repos](https://iagorivelo.vercel.app/projects/search-repos)
+
 ---
 
 ## ✨ O que ela faz
